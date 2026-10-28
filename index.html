@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Kefahaman Operating System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-100">
+<div class="max-w-7xl mx-auto p-6">
+<div class="bg-gradient-to-r from-blue-900 to-blue-500 text-white rounded-2xl p-6 mb-6 shadow-lg">
+<h1 class="text-3xl font-bold">Dashboard Kefahaman Operating System</h1>
+<p>Analisis Automatik daripada Microsoft Forms</p>
+</div>
+<div class="grid md:grid-cols-4 gap-4 mb-6">
+<div class="bg-white p-5 rounded-xl shadow"><div class="text-gray-500">Responden</div><div id="resp" class="text-4xl font-bold text-blue-700">0</div></div>
+<div class="bg-white p-5 rounded-xl shadow"><div class="text-gray-500">% Faham</div><div id="faham" class="text-4xl font-bold text-green-600">0%</div></div>
+<div class="bg-white p-5 rounded-xl shadow"><div class="text-gray-500">% Intervensi</div><div id="inter" class="text-4xl font-bold text-red-600">0%</div></div>
+<div class="bg-white p-5 rounded-xl shadow"><div class="text-gray-500">Purata Skor</div><div id="avg" class="text-4xl font-bold text-blue-600">0</div></div>
+</div>
+<div class="grid lg:grid-cols-2 gap-6 mb-6">
+<div class="bg-white p-5 rounded-xl shadow"><canvas id="donut"></canvas></div>
+<div class="bg-white p-5 rounded-xl shadow"><h2 class="font-bold mb-3">Rumusan</h2><div id="summary" class="bg-blue-50 p-4 rounded">Memuatkan data...</div></div>
+</div>
+<div class="bg-white p-5 rounded-xl shadow mb-6"><canvas id="bar"></canvas></div>
+<div class="bg-white p-5 rounded-xl shadow"><h2 class="font-bold mb-3">Komen Pelajar</h2><div id="comments"></div></div>
+</div>
+<script>
+Papa.parse('./analisa.csv',{download:true,header:true,skipEmptyLines:true,complete:function(r){
+const data=r.data;
+const topics=['Saya memahami fungsi Operating System','Saya memahami Process dan Program','Saya memahami CPU Scheduling','Saya memahami Memory Management','Saya yakin menjawab soalan topik ini'];
+let faham=0,inter=0,total=0,scores=[],pct=[];
+topics.forEach(t=>{let ok=0,c=0;data.forEach(row=>{let v=parseInt(row[t]);if(!isNaN(v)){c++;total++;scores.push(v);if(v>=3){faham++;ok++;}else{inter++;}}});pct.push(c?Math.round(ok/c*100):0);});
+const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2);
+const fp=Math.round(faham/total*100), ip=Math.round(inter/total*100);
+document.getElementById('resp').textContent=data.length;
+document.getElementById('faham').textContent=fp+'%';
+document.getElementById('inter').textContent=ip+'%';
+document.getElementById('avg').textContent=avg+'/4';
+const strongest=topics[pct.indexOf(Math.max(...pct))]; const weakest=topics[pct.indexOf(Math.min(...pct))];
+document.getElementById('summary').innerHTML=`<b>${fp}%</b> pelajar berada dalam kategori Faham.<br><br><b>Topik terbaik:</b><br>${strongest}<br><br><b>Topik perlu perhatian:</b><br>${weakest}`;
+new Chart(document.getElementById('donut'),{type:'doughnut',data:{labels:['Faham','Intervensi'],datasets:[{data:[fp,ip],backgroundColor:['#2563eb','#ef4444']}]}});
+new Chart(document.getElementById('bar'),{type:'bar',data:{labels:['Fungsi OS','Process & Program','CPU Scheduling','Memory','Keyakinan'],datasets:[{data:pct,backgroundColor:'#2563eb'}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100}}}});
+const cm=document.getElementById('comments'); data.forEach(row=>{const k=row['Cadangan atau komen untuk membantu meningkatkan kefahaman anda.']; if(k){cm.innerHTML+=`<div class="border p-3 rounded mb-2">${k}</div>`;}});
+},error:function(){document.body.innerHTML='<div class="p-8 text-red-600 font-bold">Gagal membaca fail analisa.csv</div>';}});
+</script></body></html>
